@@ -161,9 +161,22 @@ function runSearch() {
 }
 
 async function fetchJson(path) {
-  const response = await fetch(`${API_BASE}${path}`, { headers: { Accept: "application/json" } });
-  if (!response.ok) throw new Error(`加载失败：${response.status}`);
-  return response.json();
+  const fallbackMap = {
+    "/banners": "./data/banners.json",
+    "/activities": "./data/activities.json",
+    "/fitments?limit=5000": "./data/fitments.json",
+  };
+  try {
+    const response = await fetch(`${API_BASE}${path}`, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`加载失败：${response.status}`);
+    return response.json();
+  } catch (error) {
+    const fallback = fallbackMap[path];
+    if (!fallback) throw error;
+    const response = await fetch(fallback, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw error;
+    return response.json();
+  }
 }
 
 async function initHome() {
