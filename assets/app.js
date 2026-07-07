@@ -1,4 +1,4 @@
-const API_BASE = "https://selector-api.coolify.aozoomusa.com";
+﻿const API_BASE = "https://selector-api.coolify.aozoomusa.com";
 const ORIGINAL_SITE = "https://selector.coolify.aozoomusa.com";
 const QUICK_QUERIES = ["哈弗H6", "哈弗H9", "途乐", "亚洲龙", "卡罗拉", "普拉多LC250"];
 
@@ -219,3 +219,4 @@ for (const query of QUICK_QUERIES) {
 initHome().catch(() => {
   results.innerHTML = '<div class="fitment-status">数据加载失败，请稍后刷新</div>';
 });
+
