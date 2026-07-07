@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>越野派雾灯适配查询</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">AOZOOM OFFROAD</p>
+          <h1>越野派雾灯适配查询</h1>
+        </div>
+        <a class="admin-link" href="https://selector-api.coolify.aozoomusa.com/admin/" target="_blank" rel="noreferrer">后台</a>
+      </header>
+
+      <section class="search-panel">
+        <label for="searchInput">输入车型、年款或产品型号</label>
+        <div class="search-row">
+          <input id="searchInput" type="search" placeholder="例如：哈弗H6、长城H9、途乐、亚洲龙、ALFP-13/01" autocomplete="off" />
+          <button id="searchButton" type="button">查询</button>
+        </div>
+        <div class="quick-tags" id="quickTags"></div>
+      </section>
+
+      <section class="summary" id="summary">正在加载适配数据...</section>
+      <section class="results" id="results"></section>
+    </main>
+
+    <script src="/assets/app.js"></script>
+  </body>
+</html>
