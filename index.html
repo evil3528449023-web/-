@@ -3,32 +3,87 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>越野派雾灯适配查询</title>
-    <link rel="stylesheet" href="/assets/styles.css" />
+    <title>越野派雾灯适配库</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
   </head>
   <body>
-    <main class="app">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">AOZOOM OFFROAD</p>
-          <h1>越野派雾灯适配查询</h1>
+    <main class="page">
+      <section class="hero" id="hero">
+        <div class="logo-mark">
+          <span class="flag">◆◆</span>
+          <div>
+            <strong>越野派</strong>
+            <small>off-road vehicle</small>
+          </div>
         </div>
-        <a class="admin-link" href="https://selector-api.coolify.aozoomusa.com/admin/" target="_blank" rel="noreferrer">后台</a>
-      </header>
-
-      <section class="search-panel">
-        <label for="searchInput">输入车型、年款或产品型号</label>
-        <div class="search-row">
-          <input id="searchInput" type="search" placeholder="例如：哈弗H6、长城H9、途乐、亚洲龙、ALFP-13/01" autocomplete="off" />
-          <button id="searchButton" type="button">查询</button>
+        <div class="hero-copy">
+          <p>专业越野车灯照明</p>
+          <h1>升级解决方案</h1>
+          <span>高亮聚光 / 安全照明 / 无损安装</span>
         </div>
-        <div class="quick-tags" id="quickTags"></div>
       </section>
 
-      <section class="summary" id="summary">正在加载适配数据...</section>
-      <section class="results" id="results"></section>
+      <section class="partner">
+        <div>
+          <strong>招募合作门店</strong>
+          <span>加入 奥滋姆越野派，共赢未来</span>
+        </div>
+        <button type="button">立即加盟</button>
+      </section>
+
+      <section class="search-card">
+        <div class="section-head">
+          <div>
+            <h2>车型适配查询</h2>
+            <p>输入车型，快速找到适合车辆的雾灯</p>
+          </div>
+        </div>
+        <div class="search-row">
+          <input id="searchInput" type="search" placeholder="请输入品牌 / 车系 / 年款" autocomplete="off" />
+          <button id="searchButton" type="button" aria-label="查询">⌕</button>
+        </div>
+        <div class="quick-tags" id="quickTags"></div>
+        <div class="fitment-results" id="fitmentResults"></div>
+      </section>
+
+      <section class="banner-strip" id="bannerStrip">
+        <div>
+          <p>越野升级</p>
+          <h2>猛龙 / 霸王龙 / 雷龙</h2>
+        </div>
+      </section>
+
+      <section class="product-section">
+        <div class="section-head inline">
+          <div>
+            <h2>新品上市</h2>
+            <p>查看最新构建产品</p>
+          </div>
+          <button class="more" type="button">更多</button>
+        </div>
+        <div class="product-grid" id="newProducts"></div>
+      </section>
+
+      <section class="product-section">
+        <div class="section-head inline">
+          <div>
+            <h2>热门推荐</h2>
+            <p>精选高频适配产品</p>
+          </div>
+          <button class="more" type="button">更多</button>
+        </div>
+        <div class="product-grid" id="hotProducts"></div>
+      </section>
     </main>
 
-    <script src="/assets/app.js"></script>
+    <nav class="tabbar">
+      <button class="active" type="button"><span>⌂</span>首页</button>
+      <button type="button"><span>◫</span>产品</button>
+      <button type="button"><span>▣</span>适配查询</button>
+      <button type="button"><span>◆</span>加盟合作</button>
+      <button type="button"><span>◎</span>我的</button>
+    </nav>
+
+    <script src="./assets/app.js"></script>
   </body>
 </html>

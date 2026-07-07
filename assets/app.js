@@ -1,13 +1,34 @@
 const API_BASE = "https://selector-api.coolify.aozoomusa.com";
-const QUICK_QUERIES = ["哈弗H6", "哈弗H9", "途乐", "亚洲龙", "卡罗拉", "普拉多LC250", "ALFP-13/01"];
+const ORIGINAL_SITE = "https://selector.coolify.aozoomusa.com";
+const QUICK_QUERIES = ["哈弗H6", "哈弗H9", "途乐", "亚洲龙", "卡罗拉", "普拉多LC250"];
 
 const input = document.querySelector("#searchInput");
-const button = document.querySelector("#searchButton");
-const resultsEl = document.querySelector("#results");
-const summaryEl = document.querySelector("#summary");
-const quickTagsEl = document.querySelector("#quickTags");
+const searchButton = document.querySelector("#searchButton");
+const quickTags = document.querySelector("#quickTags");
+const results = document.querySelector("#fitmentResults");
+const newProducts = document.querySelector("#newProducts");
+const hotProducts = document.querySelector("#hotProducts");
+const hero = document.querySelector("#hero");
 
 let fitments = [];
+
+function absoluteUrl(url) {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${ORIGINAL_SITE}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+function productImage(fitment) {
+  const product = fitment.product || {};
+  const images = fitment.productImages || product.productImages || [];
+  return absoluteUrl(images[0]?.url) || "";
+}
+
+function price(value) {
+  if (value === null || value === undefined || value === "") return "待确认";
+  const number = Number(value);
+  return Number.isFinite(number) ? `¥${number.toLocaleString("zh-CN")}` : String(value);
+}
 
 function normalize(value) {
   return String(value || "")
@@ -15,25 +36,18 @@ function normalize(value) {
     .replace(/长城哈弗/g, "哈弗")
     .replace(/哈佛/g, "哈弗")
     .replace(/haval/g, "哈弗")
-    .replace(/greatwall/g, "长城")
     .replace(/[，。；：、（）()\-_/\s|]+/g, "");
-}
-
-function formatPrice(value) {
-  if (value === null || value === undefined || value === "") return "待确认";
-  const number = Number(value);
-  return Number.isFinite(number) ? `¥${number.toLocaleString("zh-CN")}` : String(value);
 }
 
 function vehicleYear(vehicle) {
   if (vehicle.yearStart && vehicle.yearEnd) return `${vehicle.yearStart}-${vehicle.yearEnd}`;
   if (vehicle.yearStart) return `${vehicle.yearStart}+`;
   if (vehicle.yearEnd) return `-${vehicle.yearEnd}`;
-  return "不限年份";
+  return "";
 }
 
 function vehicleLabel(vehicle) {
-  return [vehicle.make, vehicle.model, vehicleYear(vehicle), vehicle.trim].filter(Boolean).join(" / ");
+  return [vehicle.make, vehicle.model, vehicleYear(vehicle), vehicle.trim].filter(Boolean).join(" ");
 }
 
 function getVehicles(fitment) {
@@ -48,14 +62,7 @@ function fitmentText(fitment) {
     fitment.installNote,
     product.productModel,
     product.productName,
-    ...getVehicles(fitment).flatMap((vehicle) => [
-      vehicle.make,
-      vehicle.model,
-      vehicle.trim,
-      vehicle.yearStart,
-      vehicle.yearEnd,
-      vehicleLabel(vehicle),
-    ]),
+    ...getVehicles(fitment).flatMap((vehicle) => [vehicleLabel(vehicle), vehicle.make, vehicle.model, vehicle.trim]),
   ]
     .filter(Boolean)
     .join(" ");
@@ -75,9 +82,7 @@ function queryAliases(query) {
 
 function scoreFitment(fitment, query) {
   const aliases = queryAliases(query);
-  const vehicles = getVehicles(fitment);
-  const product = fitment.product || {};
-  const vehicleText = normalize(vehicles.map(vehicleLabel).join(" "));
+  const vehicleText = normalize(getVehicles(fitment).map(vehicleLabel).join(" "));
   const allText = normalize(fitmentText(fitment));
   let best = 0;
 
@@ -87,72 +92,61 @@ function scoreFitment(fitment, query) {
     if (alias.length <= 2 && vehicleText.includes(alias)) best = Math.max(best, 90);
   }
 
-  const tokens = normalize(query).match(/[a-z0-9]+|[\u4e00-\u9fa5]+/g) || [];
-  for (const token of tokens) {
-    if (token.length < 2) continue;
-    if (vehicleText.includes(token)) best += 18;
-    else if (allText.includes(token)) best += 8;
-  }
-
+  const product = fitment.product || {};
   if (normalize(product.productModel).includes(normalize(query))) best += 120;
   return best;
 }
 
-function fitmentSummary(fitment) {
-  const product = fitment.product || {};
-  const vehicles = getVehicles(fitment);
-  const vehiclePreview = vehicles.slice(0, 4).map(vehicleLabel).join("，");
-  const more = vehicles.length > 4 ? ` 等 ${vehicles.length} 个车型` : "";
-  return {
-    title: fitment.title || product.productName || "适配产品",
-    sku: product.productModel || fitment.productId || "待确认 SKU",
-    onlinePrice: formatPrice(fitment.onlinePrice ?? product.onlinePrice),
-    retailPrice: formatPrice(fitment.retailInstalled ?? product.retailInstalled),
-    vehicle: `${vehiclePreview}${more}`,
-    note: fitment.installNote || product.note || "",
-  };
+function openDetail(fitmentId) {
+  window.open(`${ORIGINAL_SITE}/pages/product/detail?fitmentId=${encodeURIComponent(fitmentId)}`, "_blank");
 }
 
-function renderResults(rows, query) {
-  resultsEl.innerHTML = "";
-  if (!query.trim()) {
-    summaryEl.textContent = `已加载 ${fitments.length} 组适配数据。输入车型后即可查询。`;
-    resultsEl.innerHTML = '<div class="empty">请输入车型、品牌、年款或产品型号</div>';
-    return;
-  }
-
-  summaryEl.textContent = rows.length ? `找到 ${rows.length} 个适配产品` : "没有找到适配产品，可以换成“品牌+车系”再试";
-  if (!rows.length) {
-    resultsEl.innerHTML = '<div class="empty">暂无匹配结果</div>';
-    return;
-  }
-
-  for (const fitment of rows.slice(0, 40)) {
-    const item = fitmentSummary(fitment);
+function renderProductGrid(container, items) {
+  container.innerHTML = "";
+  const rows = items.slice(0, 8);
+  for (const item of rows) {
+    const fitment = item.fitment || item;
+    const product = item.product || fitment.product || {};
     const card = document.createElement("article");
-    card.className = "result-card";
+    card.className = "product-card";
     card.innerHTML = `
-      <div class="result-head">
-        <div class="result-title"></div>
-        <div class="sku"></div>
-      </div>
-      <div class="vehicle"></div>
-      <div class="price-row">
-        <span class="online"></span>
-        <span class="retail"></span>
-      </div>
-      <div class="note"></div>
+      <img alt="" />
+      <div class="product-name"></div>
+      <div class="product-sku"></div>
+      <div class="product-price"></div>
     `;
-    card.querySelector(".result-title").textContent = item.title;
-    card.querySelector(".sku").textContent = item.sku;
-    card.querySelector(".vehicle").textContent = item.vehicle || "适配车型待确认";
-    card.querySelector(".online").textContent = `线上：${item.onlinePrice}`;
-    card.querySelector(".retail").textContent = `安装：${item.retailPrice}`;
-    card.querySelector(".note").textContent = item.note;
-    card.addEventListener("click", () => {
-      location.href = `/pages/product/detail?fitmentId=${encodeURIComponent(fitment.id)}`;
-    });
-    resultsEl.appendChild(card);
+    card.querySelector("img").src = productImage(fitment);
+    card.querySelector(".product-name").textContent = fitment.title || product.productName || "奥滋姆雾灯产品";
+    card.querySelector(".product-sku").textContent = product.productModel || product.sku || "待确认 SKU";
+    card.querySelector(".product-price").textContent = price(fitment.retailInstalled ?? product.retailInstalled);
+    card.addEventListener("click", () => openDetail(fitment.id));
+    container.appendChild(card);
+  }
+}
+
+function renderSearch(rows, query) {
+  results.innerHTML = "";
+  if (!query.trim()) return;
+  if (!rows.length) {
+    results.innerHTML = '<div class="fitment-status">没有找到适配产品，可以换成“品牌+车系”再试</div>';
+    return;
+  }
+  for (const fitment of rows.slice(0, 8)) {
+    const product = fitment.product || {};
+    const vehicles = getVehicles(fitment);
+    const vehiclePreview = vehicles.slice(0, 3).map(vehicleLabel).join("，");
+    const card = document.createElement("article");
+    card.className = "fitment-card";
+    card.innerHTML = `
+      <strong></strong>
+      <span></span>
+      <em></em>
+    `;
+    card.querySelector("strong").textContent = `${fitment.title || product.productName || "适配产品"}（${product.productModel || "SKU待确认"}）`;
+    card.querySelector("span").textContent = vehiclePreview || "适配车型待确认";
+    card.querySelector("em").textContent = price(fitment.retailInstalled ?? product.retailInstalled);
+    card.addEventListener("click", () => openDetail(fitment.id));
+    results.appendChild(card);
   }
 }
 
@@ -161,21 +155,38 @@ function runSearch() {
   const rows = fitments
     .map((fitment) => ({ fitment, score: scoreFitment(fitment, query) }))
     .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score || fitmentSummary(a.fitment).sku.localeCompare(fitmentSummary(b.fitment).sku, "zh-CN"))
+    .sort((a, b) => b.score - a.score)
     .map((item) => item.fitment);
-  renderResults(rows, query);
+  renderSearch(rows, query);
 }
 
-async function loadFitments() {
-  summaryEl.textContent = "正在加载适配数据...";
-  const response = await fetch(`${API_BASE}/fitments?limit=5000`, { headers: { Accept: "application/json" } });
+async function fetchJson(path) {
+  const response = await fetch(`${API_BASE}${path}`, { headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`加载失败：${response.status}`);
-  const data = await response.json();
-  fitments = data.fitments || [];
-  renderResults([], "");
+  return response.json();
 }
 
-button.addEventListener("click", runSearch);
+async function initHome() {
+  const [bannerData, activityData, fitmentData] = await Promise.all([
+    fetchJson("/banners"),
+    fetchJson("/activities"),
+    fetchJson("/fitments?limit=5000"),
+  ]);
+
+  fitments = fitmentData.fitments || [];
+  const banners = (bannerData.banners || []).filter((item) => item.enabled);
+  if (banners[0]?.imageUrl) {
+    hero.style.backgroundImage = `linear-gradient(90deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.42) 42%, rgba(0,0,0,.05) 100%), url("${absoluteUrl(banners[0].imageUrl)}")`;
+  }
+
+  const activities = (activityData.activities || []).filter((item) => item.enabled);
+  const newest = activities.find((item) => item.title?.includes("新品")) || activities[0];
+  const hot = activities.find((item) => item.title?.includes("热门")) || activities[1];
+  renderProductGrid(newProducts, (newest?.productList?.items || []).map((item) => ({ ...item, product: item.product || item.fitment?.product })));
+  renderProductGrid(hotProducts, (hot?.productList?.items || []).map((item) => ({ ...item, product: item.product || item.fitment?.product })));
+}
+
+searchButton.addEventListener("click", runSearch);
 input.addEventListener("keydown", (event) => {
   if (event.key === "Enter") runSearch();
 });
@@ -189,10 +200,9 @@ for (const query of QUICK_QUERIES) {
     input.value = query;
     runSearch();
   });
-  quickTagsEl.appendChild(tag);
+  quickTags.appendChild(tag);
 }
 
-loadFitments().catch((error) => {
-  summaryEl.textContent = error.message || "适配数据加载失败";
-  resultsEl.innerHTML = '<div class="empty">请检查接口或稍后再试</div>';
+initHome().catch(() => {
+  results.innerHTML = '<div class="fitment-status">数据加载失败，请稍后刷新</div>';
 });
